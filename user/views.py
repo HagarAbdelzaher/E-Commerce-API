@@ -31,4 +31,8 @@ def signupView(request):
             data = serializer.errors
         
         return Response(data, status=status.HTTP_201_CREATED)
-        # return (data)
+    
+
+@api_view(['POST'])
+def loginView(request):
+    pass
