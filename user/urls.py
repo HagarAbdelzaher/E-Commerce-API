@@ -8,5 +8,6 @@ router = DefaultRouter()
 
 urlpatterns = [
     path('register/', signupView, name='register'),
-    path('login/',obtain_auth_token , name='login')
+    path('login/',obtain_auth_token , name='login'),
+    path('logout/' , logoutView , name="logout")
 ]

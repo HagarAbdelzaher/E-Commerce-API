@@ -34,5 +34,7 @@ def signupView(request):
     
 
 @api_view(['POST'])
-def loginView(request):
-    pass
+def logoutView(request):
+        user = request.user
+        user.auth_token.delete()
+        return Response({'success':'logged out successfuly'},status=status.HTTP_200_OK)
