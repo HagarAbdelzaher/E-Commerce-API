@@ -1,4 +1,5 @@
 
+import re
 from django.conf import settings
 from rest_framework import serializers
 from decimal import Decimal
@@ -7,10 +8,10 @@ from category.models import Category
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True,min_length=4,max_length=20)
-    price = serializers.DecimalField(required=True,max_digits=8,decimal_places=2)
+    name = serializers.CharField(required=True)
+    price = serializers.DecimalField(required=True,max_digits=8, decimal_places=2)
     # image = serializers.ImageField(required=True)
-    description= serializers.CharField(required=True,min_length=15, max_length=200)
+    description= serializers.CharField(required=True)
     quantity= serializers.IntegerField(required=True) 
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
@@ -19,33 +20,33 @@ class ProductSerializer(serializers.ModelSerializer):
         # fields = ['name', 'price', 'description', 'quantity','category_id','image]
         fields = ['name', 'price', 'description', 'quantity','category_id']
       
-    def validate_name(self, data):
-        name = data.get('name')
-     
-        if not isinstance(name, str):
-            raise serializers.ValidationError("Name must be a string.")
+    def validate_name(self, value):
+        pattern = r'[A-Za-z]'
+        if not re.match(pattern, value):
+            raise serializers.ValidationError('Name must be string')
+    
         
-        if len(name) <= 4:
+        if len(value) < 4:
             raise serializers.ValidationError("Name length must be greater than 3  characters.")
         
-        return data
+        return value
     
 
     def validate_price(self, value):
         if not isinstance(value, Decimal):
             raise serializers.ValidationError("Price must be decimal.")
         
-        if value <=1:
+        if value <1:
             raise serializers.ValidationError("Price must be greater than 0.")
         
         return value
     
 
     def validate_description(self, value):
-        if not isinstance(value, str):
-            raise serializers.ValidationError("Description must be a string.")
-        
-        if len(value) <= 15:
+        pattern = r'[A-Za-z]'
+        if not re.match(pattern, value):
+            raise serializers.ValidationError('Description must be string')
+        if len(value) < 15:
             raise serializers.ValidationError("Description length must be greater than 14 characters.")
         
         return value
@@ -66,24 +67,25 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Category must be a valid category object.")
         return value
 
-    def save(self):
-       
-        # image = self.validated_data['image']
-        
-        if Product.objects.filter(name=self.validated_data['name']).exists():
-            raise serializers.ValidationError({'error': 'Product name already exists!'})
-        
 
     
-
-        product = Product(
-                name=self.validated_data['name'],
-                price=self.validated_data['price'],
-                description = self.validated_data['description'],
-                quantity=self.validated_data['quantity'],
-                category_id = self.validated_data['category_id'],
-            )
-        
-     
-        product.save()
+    def create(self, validated_data):
+        if Product.objects.filter(name=self.validated_data['name']).exists():
+            raise serializers.ValidationError({'error': 'Product name already exists!'})
+      
+        product = Product.objects.create(**validated_data)
         return product
+
+    def update(self, instance, validated_data):
+        if Product.objects.filter(name=self.validated_data['name']).exists():
+            raise serializers.ValidationError({'error': 'Product name already exists!'})
+        instance.name = validated_data.get('name', instance.name)
+        instance.price = validated_data.get('price', instance.price)
+        instance.description = validated_data.get('description', instance.description)
+        instance.quantity = validated_data.get('quantity', instance.quantity)
+        instance.category_id = validated_data.get('category_id', instance.category_id)
+        instance.save()
+        return instance
+
+
+

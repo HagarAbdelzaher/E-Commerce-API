@@ -5,7 +5,9 @@ from product.views import *
 router = DefaultRouter()
 
 
-# urlpatterns = [
-#     path('<int:id>',name='productid'),
-   
-# ]
+
+urlpatterns = [
+    path('',product_list, name='products'),
+    path('<int:id>',product_details, name='productdetails'),
+  
+]

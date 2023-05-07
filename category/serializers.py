@@ -1,43 +1,43 @@
 
+import re
 from django.conf import settings
 from rest_framework import serializers
 from .models import Category
 
 class CategorySerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True,min_length=4,max_length=20)
+    name = serializers.CharField(required=True)
 
 
     class Meta:
         model = Category
         fields = ['id' ,'name']
       
-    def validate_name(self, data):
-        name = data.get('name')
-     
-        if not isinstance(name, str):
-            raise serializers.ValidationError("Name must be a string.")
+    def validate_name(self, value):
+        pattern = r'[A-Za-z]'
+        if not re.match(pattern, value):
+            raise serializers.ValidationError('Name must be string')
+    
         
-        if len(name) <= 4:
-            raise serializers.ValidationError("Name length must be greater than 3  characters.")
+        if len(value) < 4:
+            raise serializers.ValidationError({"Name length must be greater than 3  characters."})
         
-        return data
+        return value
 
     
-    def save(self):
-     
-        
+    def create(self, validated_data):
         if Category.objects.filter(name=self.validated_data['name']).exists():
             raise serializers.ValidationError({'error': 'Category name already exists!'})
-        
-
-     
-
-        category = Category(
-    
-                name=self.validated_data['name'],
-              
-            )
-        
       
-        category.save()
-        return  category 
+        category = Category.objects.create(**validated_data)
+        return category
+
+    def update(self, instance, validated_data):
+        if Category.objects.filter(name=self.validated_data['name']).exists():
+            raise serializers.ValidationError({'error': 'Category name already exists!'})
+        instance.name = validated_data.get('name', instance.name)
+        instance.save()
+        return instance
+
+
+
+
