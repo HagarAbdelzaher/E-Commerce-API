@@ -13,7 +13,7 @@ def product_list (request):
     if request.method == 'GET':
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
-        return JsonResponse({'Products':serializer.data})
+        return Response(serializer.data)
     
     if request.method == 'POST':
       serializer = ProductSerializer(data=request.data)
@@ -37,9 +37,9 @@ def product_details (request,id):
     elif request.method == 'PUT':
       serializer =  ProductSerializer (product, data=request.data)
       if serializer.is_valid():
-         serializer. save ()
+         serializer.update (product, serializer.validated_data)
          return Response (serializer.data)
       return Response (serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE' :
       product.delete()
-      return Response (serializer.errors, status=status. HTTP_204_NO_CONTENT)
+      return Response (status=status. HTTP_204_NO_CONTENT)

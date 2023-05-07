@@ -13,7 +13,7 @@ def category_list (request):
     if request.method == 'GET':
         categories = Category.objects.all()
         serializer = CategorySerializer(categories, many=True)
-        return Response(serializer .data)
+        return Response(serializer.data)
     
     if request.method == 'POST':
       serializer = CategorySerializer(data=request.data)
