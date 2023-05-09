@@ -10,15 +10,15 @@ from category.models import Category
 class ProductSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     price = serializers.DecimalField(max_digits=8, decimal_places=2)
-    # image = serializers.ImageField(required=True)
+    image = serializers.CharField()
     description= serializers.CharField()
     quantity= serializers.IntegerField() 
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
     class Meta:
         model = Product
-        # fields = ['name', 'price', 'description', 'quantity','category_id','image]
-        fields = ['id','name', 'price', 'description', 'quantity','category_id']
+       
+        fields = ['id','name', 'price', 'description', 'quantity','category_id','image']
       
       
     def validate_name(self, value):
@@ -85,6 +85,7 @@ class ProductSerializer(serializers.ModelSerializer):
         instance.description = validated_data.get('description', instance.description)
         instance.quantity = validated_data.get('quantity', instance.quantity)
         instance.category_id = validated_data.get('category_id', instance.category_id)
+        instance.image = validated_data.get('image', instance.image)
         instance.save()
         return instance
 
