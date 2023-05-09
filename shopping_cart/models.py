@@ -1,19 +1,10 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from user.models import User
 from product.models import Product
 
+
 # Create your models here.
-
-
-class IntegerRangeField(models.IntegerField):
-    def __init__(self, verbose_name=None, name=None, min_value=None, max_value=None, **kwargs):
-        self.min_value, self.max_value = min_value, max_value
-        models.IntegerField.__init__(self, verbose_name, name, **kwargs)
-
-    def formfield(self, **kwargs):
-        defaults = {'min_value': self.min_value, 'max_value': self.max_value}
-        defaults.update(kwargs)
-        return super(IntegerRangeField, self).formfield(**defaults)
 
 
 class Cart(models.Model):
@@ -22,17 +13,18 @@ class Cart(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
     )
+    products = models.ManyToManyField(Product, related_name='carts', through='CartItem')
     
     def __str__(self) -> str:
         return f'{self.user.username} shopping cart'
 
 
-class Cart_Item(models.Model):
+class CartItem(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="cart_items")
-    quntity = IntegerRangeField(min_value=1, max_value=15)
+    quntity = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(15)])
     cart = models.ForeignKey(
-        Cart, on_delete=models.CASCADE, related_name="cart_items")
+        Cart, on_delete=models.CASCADE, related_name="cart")
     
     def __str__(self) -> str:
         return self.product.name
