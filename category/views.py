@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from rest_framework.pagination import PageNumberPagination
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 def category_list (request):
     if request.method == 'GET':
         paginator = PageNumberPagination()
@@ -21,16 +21,16 @@ def category_list (request):
         serializer = CategorySerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
     
-    if request.method == 'POST':
-      permission_classes = [permissions.IsAdminUser]
-      serializer = CategorySerializer(data=request.data)
-      if serializer.is_valid():
-          serializer.save ()
-          return Response (serializer.data, status=status.HTTP_201_CREATED)
-      else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # if request.method == 'POST':
+    #   permission_classes = [permissions.IsAdminUser]
+    #   serializer = CategorySerializer(data=request.data)
+    #   if serializer.is_valid():
+    #       serializer.save ()
+    #       return Response (serializer.data, status=status.HTTP_201_CREATED)
+    #   else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
       
-@api_view(['GET', 'PUT','DELETE'])
+@api_view(['GET'])
 def category_details (request,id):
 
     try:
@@ -46,18 +46,18 @@ def category_details (request,id):
       data['products'] = product_serializer.data
       return Response(data)
     
-    elif request.method == 'PUT': 
-      permission_classes = [permissions.IsAdminUser]
-      serializer = CategorySerializer(category,data=request.data,partial=True)
+    # elif request.method == 'PUT': 
+    #   permission_classes = [permissions.IsAdminUser]
+    #   serializer = CategorySerializer(category,data=request.data,partial=True)
      
-      if serializer.is_valid():
+    #   if serializer.is_valid():
          
-            serializer.update (category, serializer.validated_data)
-            return Response(serializer.data)
+    #         serializer.update (category, serializer.validated_data)
+    #         return Response(serializer.data)
       
-      return Response (serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    #   return Response (serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
-    elif request.method == 'DELETE' :
-      permission_classes = [permissions.IsAdminUser]
-      category.delete()
-      return Response (status=status. HTTP_204_NO_CONTENT)
+    # elif request.method == 'DELETE' :
+    #   permission_classes = [permissions.IsAdminUser]
+    #   category.delete()
+    #   return Response (status=status. HTTP_204_NO_CONTENT)

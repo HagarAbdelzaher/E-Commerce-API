@@ -21,73 +21,73 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id','name', 'price', 'description', 'quantity','category_id','image']
       
       
-    def validate_name(self, value):
-        pattern = r'[A-Za-z]'
-        if not re.match(pattern, value):
-            raise serializers.ValidationError('Name must be string')
+    # def validate_name(self, value):
+    #     pattern = r'[A-Za-z]'
+    #     if not re.match(pattern, value):
+    #         raise serializers.ValidationError('Name must be string')
     
         
-        if len(value) < 4:
-            raise serializers.ValidationError("Name length must be greater than 3  characters.")
+    #     if len(value) < 4:
+    #         raise serializers.ValidationError("Name length must be greater than 3  characters.")
         
-        return value
+    #     return value
     
 
-    def validate_price(self, value):
-        if not isinstance(value, Decimal):
-            raise serializers.ValidationError("Price must be decimal.")
+    # def validate_price(self, value):
+    #     if not isinstance(value, Decimal):
+    #         raise serializers.ValidationError("Price must be decimal.")
         
-        if value <1:
-            raise serializers.ValidationError("Price must be greater than 0.")
+    #     if value <1:
+    #         raise serializers.ValidationError("Price must be greater than 0.")
         
-        return value
+    #     return value
     
 
-    def validate_description(self, value):
-        pattern = r'[A-Za-z]'
-        if not re.match(pattern, value):
-            raise serializers.ValidationError('Description must be string')
-        if len(value) < 15:
-            raise serializers.ValidationError("Description length must be greater than 14 characters.")
+    # def validate_description(self, value):
+    #     pattern = r'[A-Za-z]'
+    #     if not re.match(pattern, value):
+    #         raise serializers.ValidationError('Description must be string')
+    #     if len(value) < 15:
+    #         raise serializers.ValidationError("Description length must be greater than 14 characters.")
         
-        return value
+    #     return value
 
 
-    def validate_quantity(self, value):
-        if not isinstance(value, int):
-            raise serializers.ValidationError("Quantity must be a integer.")
+    # def validate_quantity(self, value):
+    #     if not isinstance(value, int):
+    #         raise serializers.ValidationError("Quantity must be a integer.")
         
-        if value < 1:
-            raise serializers.ValidationError("Quantity length must be greater than 0 .")
+    #     if value < 1:
+    #         raise serializers.ValidationError("Quantity length must be greater than 0 .")
         
-        return value
+    #     return value
     
-    def validate_category_id(self, value):
+    # def validate_category_id(self, value):
 
-        if not isinstance(value, Category):
-            raise serializers.ValidationError("Category must be a valid category object.")
-        return value
+    #     if not isinstance(value, Category):
+    #         raise serializers.ValidationError("Category must be a valid category object.")
+    #     return value
 
 
     
-    def create(self, validated_data):
-        if Product.objects.filter(name=self.validated_data['name']).exists():
-            raise serializers.ValidationError({'error': 'Product name already exists!'})
+    # def create(self, validated_data):
+    #     if Product.objects.filter(name=self.validated_data['name']).exists():
+    #         raise serializers.ValidationError({'error': 'Product name already exists!'})
       
-        product = Product.objects.create(**validated_data)
-        return product
+    #     product = Product.objects.create(**validated_data)
+    #     return product
 
-    def update(self, instance, validated_data):
-        if Product.objects.filter(name=self.validated_data['name']).exists():
-            raise serializers.ValidationError({'error': 'Product name already exists!'})
-        instance.name = validated_data.get('name', instance.name)
-        instance.price = validated_data.get('price', instance.price)
-        instance.description = validated_data.get('description', instance.description)
-        instance.quantity = validated_data.get('quantity', instance.quantity)
-        instance.category_id = validated_data.get('category_id', instance.category_id)
-        instance.image = validated_data.get('image', instance.image)
-        instance.save()
-        return instance
+    # def update(self, instance, validated_data):
+    #     if Product.objects.filter(name=self.validated_data['name']).exists():
+    #         raise serializers.ValidationError({'error': 'Product name already exists!'})
+    #     instance.name = validated_data.get('name', instance.name)
+    #     instance.price = validated_data.get('price', instance.price)
+    #     instance.description = validated_data.get('description', instance.description)
+    #     instance.quantity = validated_data.get('quantity', instance.quantity)
+    #     instance.category_id = validated_data.get('category_id', instance.category_id)
+    #     instance.image = validated_data.get('image', instance.image)
+    #     instance.save()
+    #     return instance
 
 
 
