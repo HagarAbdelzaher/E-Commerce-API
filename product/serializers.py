@@ -8,17 +8,18 @@ from category.models import Category
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(required=True)
-    price = serializers.DecimalField(required=True,max_digits=8, decimal_places=2)
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=8, decimal_places=2)
     # image = serializers.ImageField(required=True)
-    description= serializers.CharField(required=True)
-    quantity= serializers.IntegerField(required=True) 
+    description= serializers.CharField()
+    quantity= serializers.IntegerField() 
     category_id = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
     class Meta:
         model = Product
         # fields = ['name', 'price', 'description', 'quantity','category_id','image]
-        fields = ['name', 'price', 'description', 'quantity','category_id']
+        fields = ['id','name', 'price', 'description', 'quantity','category_id']
+      
       
     def validate_name(self, value):
         pattern = r'[A-Za-z]'
