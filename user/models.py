@@ -241,7 +241,7 @@ def create_auth_token(sender, instance=None,created=False, **kwargs):
 
 
 class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     detailed_address= models.CharField(max_length=300, blank=True, null=True)
     country = models.CharField(max_length=100,choices=COUNTRY_CHOICES)
     city = models.CharField(max_length=100)
