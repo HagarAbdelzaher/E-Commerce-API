@@ -22,20 +22,23 @@ class AddressSerializer(serializers.ModelSerializer):
         floor_no = data.get('floor_no')          
 
     
-        if detailed_address and not isinstance(detailed_address, str):
-            raise  serializers.ValidationError("detailed address must be a string.")
-        if detailed_address and len(detailed_address) > 300:
-            raise  serializers.ValidationError("detailed address can't exceed 300 character");
+        if detailed_address:
+            if not isinstance(detailed_address, str):
+                raise  serializers.ValidationError("detailed address must be a string.")
+            if len(detailed_address) > 300:
+                raise  serializers.ValidationError("detailed address can't exceed 300 character");
     
-        if country and not isinstance(country , str):
-            raise  serializers.ValidationError("Country must be a string.");
-        if len(country) < 1 or len(country) > 100:
-            raise  serializers.ValidationError("Country length must be more than 1");
+        if country: 
+            if not isinstance(country , str):
+                raise  serializers.ValidationError("Country must be a string.");
+            if len(country) < 1 or len(country) > 100:
+                raise  serializers.ValidationError("Country length must be more than 1");
 
-        if city and not isinstance(city , str):
-            raise  serializers.ValidationError("Country must be a string.");
-        if len(city) < 1 or len(city) > 100:
-            raise  serializers.ValidationError("city length must be between 1 and 100 characters.");
+        if city:
+            if not isinstance(city , str):
+                raise  serializers.ValidationError("Country must be a string.");
+            if len(city) < 1 or len(city) > 100:
+                raise  serializers.ValidationError("city length must be between 1 and 100 characters.");
 
         if apartment_no and not isinstance(apartment_no,int):
              raise  serializers.ValidationError("apartment number must be a number")
@@ -95,6 +98,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
     
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:

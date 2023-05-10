@@ -56,3 +56,19 @@ def updateView(request):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=400)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def updateAddressView(request):
+    user = request.user
+    try:
+        address = Address.objects.get(user=user)
+    except Address.DoesNotExist:
+        return Response({'detail': 'Address not found'}, status=404)
+
+    serializer = AddressSerializer(address, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
