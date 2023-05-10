@@ -250,6 +250,9 @@ class Address(models.Model):
     building_no = models.IntegerField()
     apartment_no = models.IntegerField(blank=True, null=True)
     floor_no = models.IntegerField( blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user}'s address"
    
 
     def clean(self):
