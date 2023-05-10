@@ -1,11 +1,12 @@
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view , permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import status
-from .serializers import SignUpSerializer , AddressSerializer
+from .serializers import SignUpSerializer , AddressSerializer , UserUpdateSerializer
 from.models import Address
 @api_view(['POST'])
 def signupView(request):
@@ -44,3 +45,14 @@ def logoutView(request):
         user = request.user
         user.auth_token.delete()
         return Response({'success':'logged out successfuly'},status=status.HTTP_200_OK)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def updateView(request):
+    user = request.user
+    serializer = UserUpdateSerializer(user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)

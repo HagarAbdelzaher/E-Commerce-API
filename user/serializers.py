@@ -94,8 +94,27 @@ class SignUpSerializer(serializers.ModelSerializer):
         
         user.set_password(password)
         user.save()
-
-        # address_data = self.validated_data['address']
-        # Address.objects.create( **address_data)
         return user
+    
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'email' ,'first_name', 'last_name' ]
 
+    def validate_first_name(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError("First name length must be greater than 2 characters.")
+        return value
+
+    def validate_last_name(self, value):
+        if len(value) < 3:
+            raise serializers.ValidationError("Last name length must be greater than 2 characters.")
+        return value
+    def validate_username(self, value):
+        if not isinstance(value, str):
+            raise serializers.ValidationError("Username must be a string.")
+        
+        if len(value) <= 3:
+            raise serializers.ValidationError("Username length must be greater than 2  characters.")
+        
+        return value
