@@ -43,10 +43,10 @@ class OrderCreate(APIView):
         for item in cart_items:
             order_item = OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, price=item.product.price)
             product = item.product
-            # product.quantity -= item.quantity
+            product.quantity -= item.quantity
             product.save()
             
-        # cart_items.delete()
+        cart_items.delete()
         
         serializer = OrderSerializer(order, data={'user':user.pk, 'order_items': [], **request.data})
         if serializer.is_valid():

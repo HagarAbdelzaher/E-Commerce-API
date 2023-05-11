@@ -1,130 +1,287 @@
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db import models
 from rest_framework.authtoken.models import Token
-
+from django.core.exceptions import ValidationError
+COUNTRY_CHOICES = [
+    ('AF', 'Afghanistan'),
+    ('AL', 'Albania'),
+    ('DZ', 'Algeria'),
+    ('AS', 'American Samoa'),
+    ('AD', 'Andorra'),
+    ('AO', 'Angola'),
+    ('AI', 'Anguilla'),
+    ('AQ', 'Antarctica'),
+    ('AG', 'Antigua and Barbuda'),
+    ('AR', 'Argentina'),
+    ('AM', 'Armenia'),
+    ('AW', 'Aruba'),
+    ('AU', 'Australia'),
+    ('AT', 'Austria'),
+    ('AZ', 'Azerbaijan'),
+    ('BS', 'Bahamas'),
+    ('BH', 'Bahrain'),
+    ('BD', 'Bangladesh'),
+    ('BB', 'Barbados'),
+    ('BY', 'Belarus'),
+    ('BE', 'Belgium'),
+    ('BZ', 'Belize'),
+    ('BJ', 'Benin'),
+    ('BM', 'Bermuda'),
+    ('BT', 'Bhutan'),
+    ('BO', 'Bolivia'),
+    ('BA', 'Bosnia and Herzegovina'),
+    ('BW', 'Botswana'),
+    ('BV', 'Bouvet Island'),
+    ('BR', 'Brazil'),
+    ('IO', 'British Indian Ocean Territory'),
+    ('BN', 'Brunei Darussalam'),
+    ('BG', 'Bulgaria'),
+    ('BF', 'Burkina Faso'),
+    ('BI', 'Burundi'),
+    ('KH', 'Cambodia'),
+    ('CM', 'Cameroon'),
+    ('CA', 'Canada'),
+    ('CV', 'Cape Verde'),
+    ('KY', 'Cayman Islands'),
+    ('CF', 'Central African Republic'),
+    ('TD', 'Chad'),
+    ('CL', 'Chile'),
+    ('CN', 'China'),
+    ('CX', 'Christmas Island'),
+    ('CC', 'Cocos (Keeling) Islands'),
+    ('CO', 'Colombia'),
+    ('KM', 'Comoros'),
+    ('CG', 'Congo'),
+    ('CD', 'Congo, the Democratic Republic of the'),
+    ('CK', 'Cook Islands'),
+    ('CR', 'Costa Rica'),
+    ('CI', 'Cote d\'Ivoire'),
+    ('HR', 'Croatia'),
+    ('CU', 'Cuba'),
+    ('CY', 'Cyprus'),
+    ('CZ', 'Czech Republic'),
+    ('DK', 'Denmark'),
+    ('DJ', 'Djibouti'),
+    ('DM', 'Dominica'),
+    ('DO', 'Dominican Republic'),
+    ('EC', 'Ecuador'),
+    ('EG', 'Egypt'),
+    ('SV', 'El Salvador'),
+    ('GQ', 'Equatorial Guinea'),
+    ('ER', 'Eritrea'),
+    ('EE', 'Estonia'),
+    ('ET', 'Ethiopia'),
+    ('FK', 'Falkland Islands (Malvinas)'),
+    ('FO', 'Faroe Islands'),
+    ('FJ', 'Fiji'),
+    ('FI', 'Finland'),
+    ('FR', 'France'),
+    ('GF', 'French Guiana'),
+    ('PF', 'French Polynesia'),
+    ('TF', 'French Southern Territories'),
+    ('GA', 'Gabon'),
+    ('GM', 'Gambia'),
+    ('GE', 'Georgia'),
+    ('DE', 'Germany'),
+    ('GH', 'Ghana'),
+    ('GI', 'Gibraltar'),
+    ('GR', 'Greece'),
+    ('GL', 'Greenland'),
+    ('GD', 'Grenada'),
+    ('GP', 'Guadeloupe'),
+    ('GU', 'Guam'),
+    ('GT', 'Guatemala'),
+    ('GN', 'Guinea'),
+    ('GW', 'Guinea-Bissau'),
+    ('GY', 'Guyana'),
+    ('HT', 'Haiti'),
+    ('HM', 'Heard Island and McDonald Islands'),
+    ('VA', 'Holy See (Vatican City State)'),
+    ('HN', 'Honduras'),
+    ('HK', 'Hong Kong'),
+    ('HU', 'Hungary'),
+    ('IS', 'Iceland'),
+    ('IN', 'India'),
+    ('ID', 'Indonesia'),
+    ('IR', 'Iran, Islamic Republic of'),
+    ('IQ', 'Iraq'),
+    ('IE', 'Ireland'),
+    ('IL', 'Israel'),
+    ('IT', 'Italy'),
+    ('JM', 'Jamaica'),
+    ('JP', 'Japan'),
+    ('JO', 'Jordan'),
+    ('KZ', 'Kazakhstan'),
+    ('KE', 'Kenya'),
+    ('KI', 'Kiribati'),
+    ('KP', 'Korea, Democratic People\'s Republic of'),
+    ('KR', 'Korea, Republic of'),
+    ('KW', 'Kuwait'),
+    ('KG', 'Kyrgyzstan'),
+    ('LA', 'Lao People\'s Democratic Republic'),
+    ('LV', 'Latvia'),
+    ('LB', 'Lebanon'),
+    ('LS', 'Lesotho'),
+    ('LR', 'Liberia'),
+    ('LY', 'Libyan Arab Jamahiriya'),
+    ('LI', 'Liechtenstein'),
+    ('LT', 'Lithuania'),
+    ('LU', 'Luxembourg'),
+    ('MO', 'Macao'),
+    ('MK', 'Macedonia, the former Yugoslav Republic of'),
+    ('MG', 'Madagascar'),
+    ('MW', 'Malawi'),
+    ('MY', 'Malaysia'),
+    ('MV', 'Maldives'),
+    ('ML', 'Mali'),
+    ('MT', 'Malta'),
+    ('MH', 'Marshall Islands'),
+    ('MQ', 'Martinique'),
+    ('MR', 'Mauritania'),
+    ('MU', 'Mauritius'),
+    ('YT', 'Mayotte'),
+    ('MX', 'Mexico'),
+    ('FM', 'Micronesia, Federated States of'),
+    ('MD', 'Moldova, Republic of'),
+    ('MC', 'Monaco'),
+    ('MN', 'Mongolia'),
+    ('MS', 'Montserrat'),
+    ('MA', 'Morocco'),
+    ('MZ', 'Mozambique'),
+    ('MM', 'Myanmar'),
+    ('NA', 'Namibia'),
+    ('NR', 'Nauru'),
+    ('NP', 'Nepal'),
+    ('NL', 'Netherlands'),
+    ('AN', 'Netherlands Antilles'),
+    ('NC', 'New Caledonia'),
+    ('NZ', 'New Zealand'),
+    ('NI', 'Nicaragua'),
+    ('NE', 'Niger'),
+    ('NG', 'Nigeria'),
+    ('NU', 'Niue'),
+    ('NF', 'Norfolk Island'),
+    ('MP', 'Northern Mariana Islands'),
+    ('NO', 'Norway'),
+    ('OM', 'Oman'),
+    ('PK', 'Pakistan'),
+    ('PW', 'Palau'),
+    ('PS', 'Palestinian Territory, Occupied'),
+    ('PA', 'Panama'),
+    ('PG', 'Papua New Guinea'),
+    ('PY', 'Paraguay'),
+    ('PE', 'Peru'),
+    ('PH', 'Philippines'),
+    ('PN', 'Pitcairn'),
+    ('PL', 'Poland'),
+    ('PT', 'Portugal'),
+    ('PR', 'Puerto Rico'),
+    ('QA', 'Qatar'),
+    ('RE', 'Reunion'),
+    ('RO', 'Romania'),
+    ('RU', 'Russian Federation'),
+    ('RW', 'Rwanda'),
+    ('SH', 'Saint Helena'),
+    ('KN', 'Saint Kitts and Nevis'),
+    ('LC', 'Saint Lucia'),
+    ('PM', 'Saint Pierre and Miquelon'),
+    ('VC', 'Saint Vincent and the Grenadines'),
+    ('WS', 'Samoa'),
+    ('SM', 'San Marino'),
+    ('ST', 'Sao Tome and Principe'),
+    ('SA', 'Saudi Arabia'),
+    ('SN', 'Senegal'),
+    ('SC', 'Seychelles'),
+    ('SL', 'Sierra Leone'),
+    ('SG', 'Singapore'),
+    ('SK', 'Slovakia'),
+    ('SI', 'Slovenia'),
+    ('SB', 'Solomon Islands'),
+    ('SO', 'Somalia'),
+    ('ZA', 'South Africa'),
+    ('GS', 'South Georgia and the South Sandwich Islands'),
+    ('ES', 'Spain'),
+    ('LK', 'Sri Lanka'),
+    ('SD', 'Sudan'),
+    ('SR', 'Suriname'),
+    ('SJ', 'Svalbard and Jan Mayen'),
+    ('SZ', 'Swaziland'),
+    ('SE', 'Sweden'),
+    ('CH', 'Switzerland'),
+    ('SY', 'Syrian Arab Republic'),
+    ('TW', 'Taiwan, Province of China'),
+    ('TJ', 'Tajikistan'),
+    ('TZ', 'Tanzania, United Republic of'),
+    ('TH', 'Thailand'),
+    ('TL', 'Timor-Leste'),
+    ('TG', 'Togo'),
+    ('TK', 'Tokelau'),
+    ('TO', 'Tonga'),
+    ('TT', 'Trinidad and Tobago'),
+    ('TN', 'Tunisia'),
+    ('TR', 'Turkey'),
+    ('TM', 'Turkmenistan'),
+    ('TC', 'Turks and Caicos Islands'),
+    ('TV', 'Tuvalu'),
+    ('UG', 'Uganda'),
+    ('UA', 'Ukraine'),
+    ('AE', 'United Arab Emirates')]
 
 from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
-
+#  sets up a signal (post save) to automatically create an authentication token for a new user
 @receiver(post_save,sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None,created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
 
 
+class Address(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    detailed_address= models.CharField(max_length=300, blank=True, null=True)
+    country = models.CharField(max_length=100,choices=COUNTRY_CHOICES)
+    city = models.CharField(max_length=100)
+    street = models.CharField(max_length=100)
+    district = models.CharField(max_length=100)
+    building_no = models.IntegerField()
+    apartment_no = models.IntegerField(blank=True, null=True)
+    floor_no = models.IntegerField( blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.user}'s address"
+   
 
+    def clean(self):
 
+        if self.detailed_address and not isinstance(self.detailed_address, str):
+            raise ValidationError("detailed address must be a string.")
+        if self.detailed_address and len(self.detailed_address) > 300:
+            raise ValidationError("detailed address can't exceed 300 character");
+    
+        if self.country and not isinstance(self.country , str):
+            raise ValidationError("Country must be a string.");
+        if len(self.country) < 1 or len(self.country) > 100:
+            raise ValidationError("Country length must be more than 1");
 
+        if self.city and not isinstance(self.city , str):
+            raise ValidationError("Country must be a string.");
+        if len(self.city) < 1 or len(self.city) > 100:
+            raise ValidationError("city length must be between 1 and 100 characters.");
 
-
-
-
-
-
-
-
-
-
-
-
-
-# # from django.db import models
-# # from django.contrib.auth import models as auth_models
-# # # Create your models here.
-# # class UserManager(auth_models.BaseUserManager):
-# #     def create_user(
-# #             self,
-# #             firstName:str,
-# #             lastName:str,
-# #             email:str,
-# #             phoneNumber:str,
-# #             address:str,
-# #             city:str,
-# #             state:str,
-# #             postalCode:str,
-# #             username:str,
-# #             password: str = None,
-# #             is_staff=False,
-# #             is_superuser=False,
-
-            
-
-# #     )->"User":
-# #         if not email:
-# #             raise ValueError ("User must have an Email")
-# #         if not firstName:
-# #             raise ValueError("User must have first name")
-# #         if not lastName:
-# #             raise ValueError("User must have last name")
+        if self.apartment_no and not isinstance(self.apartment_no,int):
+             raise ValidationError("apartment number must be a number")
         
-# #         user = self.model(email=self.normalize_email(email))
-# #         user.firstName = firstName
-# #         user.lastName = lastName
-# #         user.username = username
-# #         user.is_active = True
-# #         user.is_staff = is_staff
-# #         user.is_superuser = is_superuser
-# #         user.address = address
-# #         user.city=city
-# #         user.state=state
-# #         user.postalCode = postalCode
-# #         user.phoneNumber = phoneNumber
-# #         user.set_password(password)
-# #         user.save()
+        if self.floor_no and not isinstance(self.floor_no,int):
+             raise ValidationError("floor number must be a number")
+        if self.building_no and not isinstance(self.building_no,int):
+             raise ValidationError("building number must be a number")
+
+
+
+
+
         
-# #         return user
-    
-    
-# #     def create_superuser(
-# #         self,
-# #         username:str,
-# #         firstName: str,
-# #         lastName: str,
-# #         password: str ,
-# #         email: str = "admin@gmail.com", 
-# #         address :str="", 
-# #         phoneNumber:str="",
-# #         city:str="",
-# #         state:str="",
-# #         postalCode:str="",
-        
-# #     ) -> "User":
-# #         user = self.create_user(
-# #             firstName=firstName,
-# #             lastName=lastName,
-# #             email=email,
-# #             password=password,
-# #             address = address,
-# #             phoneNumber= phoneNumber,
-# #             city=city,
-# #             state=state,
-# #             postalCode=postalCode,
-# #             username = username,
-# #             is_staff=True,
-# #             is_superuser=True,
-# #         )
-# #         user.save()
-
-# #         return user
-    
-# # class User (auth_models.AbstractUser):
-# #     email = models.EmailField(verbose_name = "Email" , unique=True)
-# #     password = models.CharField(verbose_name = "Password" ,max_length=30 )
-# #     username = models.CharField(verbose_name="username" , max_length=50 , unique=True,)
-# #     firstName = models.CharField(verbose_name = "First Name ",max_length=50)
-# #     lastName = models.CharField(verbose_name = "Last Name ",max_length=50)
-# #     address  = models.TextField(verbose_name = "Address" ,null = True)
-# #     city = models.CharField(verbose_name = "City",max_length=20,null = True)
-# #     state = models.CharField(verbose_name = "State",max_length=50,null = True)
-# #     postalCode = models.CharField(verbose_name = "Postal Code ",max_length=20, null=  True)
-# #     country = models.CharField(verbose_name = "Country",max_length=50,null = True)
-# #     phoneNumber = models.CharField(verbose_name = "Phone",max_length=20, null=  True)
-    
-
-# #     objects = UserManager()
-# #     REQUIRED_FIELDS = ["firstName", "lastName"]
-
