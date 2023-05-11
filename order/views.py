@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import OrderSerializer
 from rest_framework.permissions import IsAuthenticated
-from datetime import date
+# from datetime import date
+from datetime import timedelta
+from django.utils import timezone
 
 
 class OrderList(APIView):
@@ -71,8 +73,8 @@ class CancelOrder(APIView):
         if order.user != request.user:
             return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         # cancel order within the free cancelation time 3 days
-        if (date.today() - order.created_at.date()).days > 3 and order.status == 'pending':
-            return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
+        if order.created_at + timedelta(days=3) < timezone.now():
+            return Response({'error': 'Order already shipped, you are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         order.status = 'cancelled'
         order.save()
         return Response({'message': 'Order cancelled successfully'}, status=status.HTTP_200_OK)
