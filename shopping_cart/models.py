@@ -22,7 +22,7 @@ class Cart(models.Model):
 class CartItem(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="cart_items")
-    quntity = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(15)])
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(15)])
     cart = models.ForeignKey(
         Cart, on_delete=models.CASCADE, related_name="cart")
     

@@ -1,18 +1,22 @@
 from rest_framework import serializers
-from .models import Order
+from .models import Order, OrderItem
+from user.serializers import SignUpSerializer
+from product.serializers import ProductSerializer
+from django.forms import ValidationError
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    class Meta:
+        model = OrderItem
+        fields = '__all__'
 
 class OrderSerializer(serializers.ModelSerializer):
+    description = serializers.SerializerMethodField()
+    order_items = OrderItemSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Order
         fields = '__all__'
-        
-    def create(self, validated_data):
-        return Order.objects.create(**validated_data)
     
-    def update(self, instance, validated_data):
-        instance.user = validated_data.get('user', instance.user)
-        instance.shipping_address = validated_data.get('shipping_address', instance.shipping_address)
-        instance.payment_method = validated_data.get('payment_method', instance.payment_method)
-        instance.payment_status = validated_data.get('payment_status', instance.payment_status)
-        instance.save()
-        return instance
+    def get_description(self, obj):
+        return "Order #{} - {}".format(obj.id, obj.created_at.strftime("%d %B %Y"))

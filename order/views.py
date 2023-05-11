@@ -1,69 +1,89 @@
-from django.shortcuts import render, redirect
 from .models import Order, OrderItem
-from shopping_cart.models import Cart
-from rest_framework.decorators import api_view
+from shopping_cart.models import Cart, CartItem
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import OrderSerializer
+from rest_framework.permissions import IsAuthenticated
+from datetime import date
 
-@api_view(['GET'])
-def order_list(request):
-    orders = Order.objects.filter(user=request.user)
-    serializer = OrderSerializer(orders, many=True)
-    return Response(serializer.data)
-    
-@api_view(['POST'])
-def order_create(request):
-    serializer = OrderSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
+
+class OrderList(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        orders = Order.objects.filter(user=request.user)
+        serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    # # cart = Cart.objects.filter(user=request.user)
-    # cart = Cart(request)
+class OrderCreate(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        user = request.user
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            return Response({'error': 'Cart does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
+        cart_items = CartItem.objects.filter(cart=cart)
+        
+        if not cart_items:
+            return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        for item in cart_items:
+            if item.quantity > item.product.quantity:
+                return Response({'error': f'Product {item.product.name} is out of stock'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # validate shipping address
+        if not request.data or not request.data['shipping_address']:
+            return Response({'error': 'Shipping address is required'}, status=status.HTTP_400_BAD_REQUEST)
+                           
+        order = Order.objects.create(user=user, shipping_address=request.data['shipping_address'])
+        order.save()
 
-    # if(request.method == 'POST'):
-    #     shipping_address = request.POST.get('shipping_address')
-    #     payment_method = request.POST.get('payment_method')
-        
-    #     order = Order.objects.create(user=request.user, shipping_address=shipping_address, payment_method=payment_method, payment_status='unpaid')
-        
-    #     # for item in request.user.cart_items.all():
-    #     #     OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, price=item.product.price)
-    #     #     item.delete()
-        
-    #     for item in cart:
-    #         product = item['product']
-    #         quantity = int(item['quantity'])
-    #         price = item['price'] * quantity
+        for item in cart_items:
+            order_item = OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, price=item.product.price)
+            product = item.product
+            # product.quantity -= item.quantity
+            product.save()
             
-    #         OrderItem.objects.create(order=order, product=product, quantity=quantity, price=price)
-    #         cart.remove(item['product'])
-            
-    #     return redirect('account')
+        # cart_items.delete()
+        
+        serializer = OrderSerializer(order, data={'user':user.pk, 'order_items': [], **request.data})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
     
-    # return redirect('cart')
-    
-    
-@api_view(['GET', 'PUT', 'DELETE'])
-def order_detail(request, pk):
-    try:
-        order = Order.objects.get(id=pk)
-    except Order.DoesNotExist:
-        return Response({'error': 'Order does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    
-    if request.method == 'GET':
+class OrderDetail(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        order = Order.get_order_by_user(self, request.user, pk)
+        if type(order) == Response:
+            return order   
         serializer = OrderSerializer(order)
         return Response(serializer.data)
     
-    elif request.method == 'PUT':
-        serializer = OrderSerializer(order, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        order.delete()
-        return Response({'success': 'Order deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    def put(self, request, pk):
+        order = Order.get_order_by_user(self, request.user, pk)    
+        if type(order) == Response:
+            return order   
+        # update order
+        Order.objects.update(shipping_address=request.data['shipping_address'])
+        order.shipping_address = request.data['shipping_address']
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+        
+class CancelOrder(APIView):
+    permission_classes = [IsAuthenticated]
+    def put(self, request, pk):
+        order = Order.get_order_by_id(self, pk)
+        if type(order) == Response:
+            return order
+        if order.user != request.user:
+            return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
+        # cancel order within the free cancelation time 3 days
+        if (date.today() - order.created_at.date()).days > 3 and order.status == 'pending':
+            return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
+        order.status = 'cancelled'
+        order.save()
+        return Response({'message': 'Order cancelled successfully'}, status=status.HTTP_200_OK)
