@@ -74,7 +74,7 @@ class CancelOrder(APIView):
             return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         # cancel order within the free cancelation time 3 days
         if order.created_at + timedelta(days=3) < timezone.now():
-            return Response({'error': 'Order already shipped, you are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Free cancelation time exceeded, you are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         order.status = 'cancelled'
         order.save()
         return Response({'message': 'Order cancelled successfully'}, status=status.HTTP_200_OK)
