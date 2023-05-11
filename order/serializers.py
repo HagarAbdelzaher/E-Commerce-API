@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
-from user.serializers import SignUpSerializer
 from product.serializers import ProductSerializer
-from django.forms import ValidationError
+from user.serializers import AddressSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
@@ -13,6 +12,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     order_items = OrderItemSerializer(many=True, read_only=True)
+    shipping_address = AddressSerializer(read_only=True)
     
     class Meta:
         model = Order

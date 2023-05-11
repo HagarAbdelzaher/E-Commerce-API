@@ -1,6 +1,6 @@
 from django.db import models
-from django.db.models.signals import post_save
 from product.models import Product
+from user.models import Address
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,16 +17,14 @@ class Order(models.Model):
     PAYMENT_METHOD_CHOICES = [('cash', 'Cash on delivery'), ('online', 'Online payment')]
     # PAYMENT_STATUS_CHOICES = [('paid', 'Paid'), ('unpaid', 'Unpaid')]
 
-    user = models.ForeignKey(User, related_name='orders', on_delete=models.CASCADE)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
-    shipping_address = models.CharField(max_length=255)
-    # shippingAddress = models.ForeignKey(ShippingAddress, on_delete=models.CASCADE, null=True, blank=True)
-
     payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='cash')
     # payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES)
     # payment_id = models.ForeignKey(Payment, on_delete=models.CASCADE, null=True, blank=True)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
+    user = models.ForeignKey(User, related_name='orders', on_delete=models.CASCADE)
+    shipping_address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
         
@@ -40,7 +38,7 @@ class Order(models.Model):
             return Response({'error': 'Order does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
     def get_order_by_user(self, user, pk):
-        order = self.get_order_by_id(pk)
+        order = Order.get_order_by_id(self, pk)
         if type(order) == Order and order.user != user:
             return Response({'error': 'You are not allowed to view this order'}, status=status.HTTP_403_FORBIDDEN)
         return order    

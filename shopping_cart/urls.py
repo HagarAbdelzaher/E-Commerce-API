@@ -6,5 +6,5 @@ router = DefaultRouter()
 
 urlpatterns = [
     path('', CartDetail.as_view(), name='cart_details'),
-    path('/items/<int:pk>/<str:action>', CartItem.as_view(), name='cart_items'),
+    path('items/<int:pk>/<str:action>', CartItem.as_view(), name='cart_items'),
 ]

@@ -1,5 +1,6 @@
 from .models import Order, OrderItem
-from shopping_cart.models import Cart, CartItem
+from shopping_cart.models import Cart, Cart_Item
+from user.models import Address
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -19,12 +20,14 @@ class OrderCreate(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         user = request.user
+        user_address = Address.objects.filter(user=user).first()
+
         try:
             cart = Cart.objects.get(user=user)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart does not exist'}, status=status.HTTP_404_NOT_FOUND)
         
-        cart_items = CartItem.objects.filter(cart=cart)
+        cart_items = Cart_Item.objects.filter(cart=cart)
         
         if not cart_items:
             return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
@@ -33,15 +36,11 @@ class OrderCreate(APIView):
             if item.quantity > item.product.quantity:
                 return Response({'error': f'Product {item.product.name} is out of stock'}, status=status.HTTP_400_BAD_REQUEST)
             
-        # validate shipping address
-        if not request.data or not request.data['shipping_address']:
-            return Response({'error': 'Shipping address is required'}, status=status.HTTP_400_BAD_REQUEST)
-                           
-        order = Order.objects.create(user=user, shipping_address=request.data['shipping_address'])
+        order = Order.objects.create(user=user, shipping_address=user_address)
         order.save()
 
         for item in cart_items:
-            order_item = OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, price=item.product.price)
+            OrderItem.objects.create(order=order, product=item.product, quantity=item.quantity, price=item.product.price)
             product = item.product
             product.quantity -= item.quantity
             product.save()
@@ -62,20 +61,10 @@ class OrderDetail(APIView):
             return order   
         serializer = OrderSerializer(order)
         return Response(serializer.data)
-    
-    def put(self, request, pk):
-        order = Order.get_order_by_user(self, request.user, pk)    
-        if type(order) == Response:
-            return order   
-        # update order
-        Order.objects.update(shipping_address=request.data['shipping_address'])
-        order.shipping_address = request.data['shipping_address']
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
         
 class CancelOrder(APIView):
     permission_classes = [IsAuthenticated]
-    def put(self, request, pk):
+    def post(self, request, pk):
         order = Order.get_order_by_id(self, pk)
         if type(order) == Response:
             return order
