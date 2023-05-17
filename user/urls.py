@@ -8,7 +8,7 @@ router = DefaultRouter()
 
 urlpatterns = [
     path('register/', signupView, name='register'),
-    path('login/',obtain_auth_token , name='login'),
+    path('login/',CustomAuthToken.as_view(), name='login'),
     path('logout/' , logoutView , name="logout"),
     path('update/', updateView, name='update'),
     path('update/address', updateAddressView, name='update_address'),
