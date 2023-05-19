@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import status
 from shopping_cart.models import Cart_Item, Cart
 from .serializers import CartSerializer, EditCartItemSerializer
@@ -52,6 +51,7 @@ class CartItem(generics.CreateAPIView, generics.RetrieveUpdateDestroyAPIView):
     def patch(self, request, pk, action, *args, **kwargs):
         try:
             instance = self.get_queryset().get(product=pk)
+            print(type(request.data['quantity']))
             serializer = self.get_serializer(
                 instance, data=request.data, context={"action": action, "product_id": pk})
             serializer.is_valid(raise_exception=True)

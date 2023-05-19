@@ -14,13 +14,13 @@ class Wishlist(models.Model):
         on_delete=models.CASCADE,
         primary_key=True,
     )
-    products = models.ManyToManyField(Product, related_name='wishes', through='WishlistItem')
+    products = models.ManyToManyField(Product, related_name='wishes', through='Wishlist_Item')
     
     def __str__(self) -> str:
         return f'{self.user.username} wish list'
 
 
-class WishlistItem(models.Model):
+class Wishlist_Item(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name="wishlist_items")
     wish_list = models.ForeignKey(

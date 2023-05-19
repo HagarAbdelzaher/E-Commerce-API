@@ -48,6 +48,7 @@ class AddressSerializer(serializers.ModelSerializer):
         if building_no and not isinstance(building_no,int):
              raise  serializers.ValidationError("building number must be a number")
         return data
+
 class SignUpSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True,min_length=3,max_length=20)
     last_name = serializers.CharField(required=True,min_length=3,max_length=20)

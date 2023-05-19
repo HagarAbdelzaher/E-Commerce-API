@@ -1,44 +1,57 @@
 from django.shortcuts import render
-from rest_framework import generics, mixins
+from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework import status
-from .models import Wishlist, WishlistItem
-from .serializer import WishListSerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import Wishlist, Wishlist_Item
+from .serializers import WishListSerializer, EditWishlistItemSerializer
 
 
 # Create your views here.
-
-class WachListAV(APIView):
-
-    def get(self, request, id):
-        try:
-            wish_list = Wishlist.objects.get(user=id)
-            print(wish_list)
-        except Wishlist.DoesNotExist:
-            return Response({'errors': "WishList doesn't Exist"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-        serializer = WishListSerializer(wish_list)
-        return Response({'data': serializer.data}, status=status.HTTP_200_OK)
-
-    # def post(self, request):
-    #     serializer = WishListSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response({'data': serializer.data}, status=status.HTTP_201_CREATED)
-    #     else:
-    #         return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CartItemsList(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, generics.GenericAPIView):
-    queryset = WishlistItem.objects.all()
+class WishlistDetail(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = WishListSerializer
-    
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-    
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        print(user_id)
+        return Wishlist.objects.filter(user=user_id)
+
+
+class CartItem_create(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EditWishlistItemSerializer
+
+    def post(self, request, product, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={
+                                         "user": request.user, "product_id": product})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class WishlistItem(generics.CreateAPIView, generics.RetrieveDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = EditWishlistItemSerializer
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        wishlist = Wishlist.objects.filter(user=user_id).first()
+        items = Wishlist_Item.objects.filter(wish_list=wishlist)
+        return items
+
+    def post(self, request, pk, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={
+                                         "user": request.user, "product_id": pk})
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, pk, *args, **kwargs):
+        print(self.get_queryset().values())
+        try:
+            instance = self.get_queryset().get(product_id=pk)
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Wishlist_Item.DoesNotExist:
+            return Response({"error": "WishList Item doesn't exist"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
