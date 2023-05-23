@@ -11,8 +11,8 @@ class Order(models.Model):
     PENDING = "pending"
     SHIPPED = "shipped"
     DELIVERED = "delivered"
-    CANCLED = "cancled"
-    STATUS_CHOICES = ((PENDING, "pending"), (SHIPPED, "shipped"), (DELIVERED, "delivered"), (CANCLED, "cancled"))
+    CANCELED = "canceled"
+    STATUS_CHOICES = ((PENDING, "pending"), (SHIPPED, "shipped"), (DELIVERED, "delivered"), (CANCELED, "canceled"))
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
     paid = models.BooleanField(default=False)
