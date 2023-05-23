@@ -58,5 +58,5 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         self.price = self.get_item_price()
         super(OrderItem, self).save(*args, **kwargs)
-        self.order.total_price += self.price
+        self.order.total_price += self.price + 10
         self.order.save()

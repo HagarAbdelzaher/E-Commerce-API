@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "user",
     "order",
-    "payment",
     "product",
     "category",
     "shopping_cart",

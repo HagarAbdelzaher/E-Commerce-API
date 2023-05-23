@@ -29,21 +29,13 @@ class StripeCheckout(APIView):
     """
     Create and return checkout session ID for order payment of type 'Stripe'
     """
-    def post(self, request):
-        user = request.user
-        cart = Cart.objects.get(user=user)
-        cart_items = Cart_Item.objects.filter(cart=cart)
+    def post(self, request, pk):
+        order = Order.get_order_by_user(self, request.user, pk)
+        order_items = OrderItem.objects.filter(order=order)
         
-        # validation before checkout
-        if not cart_items:
-            return Response({"detail": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
-        for item in cart_items:
-            if item.quantity > item.product.quantity:
-                return Response({'detail': f"Sorry, we do not have enough stock for {item.product.name}"}, status=status.HTTP_400_BAD_REQUEST)
-
         #make checkout Session
         line_items = []
-        for item in cart_items:
+        for item in order_items:
             product_name = item.product.name
             price = int(item.product.price * 100)  # Stripe requires the price in cents
             line_item = {
