@@ -12,22 +12,17 @@ class Order(models.Model):
     SHIPPED = "shipped"
     DELIVERED = "delivered"
     CANCLED = "cancled"
-
     STATUS_CHOICES = ((PENDING, "pending"), (SHIPPED, "shipped"), (DELIVERED, "delivered"), (CANCLED, "cancled"))
-    PAYMENT_METHOD_CHOICES = [('cash', 'Cash on delivery'), ('online', 'Online payment')]
-    # PAYMENT_STATUS_CHOICES = [('paid', 'Paid'), ('unpaid', 'Unpaid')]
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
-    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='cash')
-    # payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES)
-    # payment_id = models.ForeignKey(Payment, on_delete=models.CASCADE, null=True, blank=True)
-    
+    paid = models.BooleanField(default=False)
     user = models.ForeignKey(User, related_name='orders', on_delete=models.CASCADE)
     shipping_address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-        
+
+
     def __str__(self):
         return self.user.username + '__' + str(self.id) + '__' + str(self.total_price)
     
@@ -47,8 +42,8 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='order_items', on_delete=models.CASCADE)
     product = models.ForeignKey(Product, related_name='order_items', on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    quantity = models.PositiveIntegerField(default=1)
     
     def __str__(self):
         return self.product.name + '__' + str(self.quantity)
@@ -63,5 +58,5 @@ class OrderItem(models.Model):
     def save(self, *args, **kwargs):
         self.price = self.get_item_price()
         super(OrderItem, self).save(*args, **kwargs)
-        self.order.total_price += self.price
+        self.order.total_price += self.price + 10
         self.order.save()

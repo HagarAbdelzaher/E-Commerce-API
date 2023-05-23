@@ -15,6 +15,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+STRIPE_SECRET_KEY = "sk_test_51N9BwLA7EAsO2kBpUwd7S195buMLSAeO57yTOq6DAalGLUSlk6lpKbs2MFdhb2L1rcXD84HZHIpeS0bDXYiyJU7v00OgIOepEh"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -41,7 +42,6 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "user",
     "order",
-    "payment",
     "product",
     "category",
     "shopping_cart",
@@ -52,7 +52,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -140,16 +139,20 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # }
 #AUTH_USER_MODEL = "user.User"
 CORS_ORIGIN_ALLOW_ALL = True
+
 CORS_ALLOW_CREDENTIALS = True
+
 REST_FRAMEWORK = {
     # Use Django's standard django.contrib.auth permissions,
     # or allow read-only access for unauthenticated users.
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    # ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny'
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
     ]
 }
+
+SITE_URL = "http://localhost:3000"
