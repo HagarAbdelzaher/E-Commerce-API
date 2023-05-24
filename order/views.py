@@ -1,4 +1,4 @@
-from .models import Order, OrderItem
+from .models import Order, OrderItem, User
 from shopping_cart.models import Cart, Cart_Item
 from user.models import Address
 from rest_framework.views import APIView
@@ -27,61 +27,12 @@ class OrderList(APIView):
 class StripeCheckout(APIView):
     permission_classes = [IsAuthenticated]
     """
-    Create and return checkout session ID for order payment of type 'Stripe'
+    Create and return checkout session url for order payment of type 'Stripe'
     """
-    def post(self, request, pk):
-        order = Order.get_order_by_user(self, request.user, pk)
-        order_items = OrderItem.objects.filter(order=order)
-        
-        #make checkout Session
-        line_items = []
-        for item in order_items:
-            product_name = item.product.name
-            price = int(item.product.price * 100)  # Stripe requires the price in cents
-            line_item = {
-                'price_data' :{
-                    'currency' : 'usd',  
-                    'product_data': {
-                        'name': product_name,
-                    },
-                    'unit_amount': price
-                },
-                'quantity' : item.quantity
-            }
-            line_items.append(line_item)
-        try:
-            checkout_session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=line_items,  # include the line_items parameter here
-                mode='payment',
-                success_url= 'http://localhost:3000/orders',
-                cancel_url= 'http://localhost:3000/cart',
-                )
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'url': checkout_session.url})
-
-class PaymentSuccess(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        user = request.user
-        order = Order.objects.filter(user=user).last()
-        order.paid = True
-        order.save()
-        # Redirect to all orders page
-        return redirect('order_list')
-
-class OrderCreate(APIView):
-    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        user = request.user
-        user_address = Address.objects.filter(user=user).first()
-
         try:
-            cart = Cart.objects.get(user=user)
+            cart = Cart.objects.get(user=request.user)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -93,6 +44,49 @@ class OrderCreate(APIView):
         for item in cart_items:
             if item.quantity > item.product.quantity:
                 return Response({'error': f'Product {item.product.name} is out of stock'}, status=status.HTTP_400_BAD_REQUEST)
+
+        line_items = []
+        for item in cart_items:
+            product_name = item.product.name
+            # Stripe requires the price in cents
+            price = int(item.product.price * 100)
+            line_item = {
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': product_name,
+                    },
+                    'unit_amount': price
+                },
+                'quantity': item.quantity
+            }
+            line_items.append(line_item)
+        try:
+            base_url = request.scheme + '://' + request.get_host()
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=line_items,  # include the line_items parameter here
+                mode='payment',
+                # cretae order on success payment
+                success_url=f'{base_url}/orders/create/?user={request.user.pk}',
+                cancel_url=f'{base_url}/users/cart/',
+            )
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'url': checkout_session.url})
+
+
+class OrderCreate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_pk = self.request.GET.get('user')
+        user = User.objects.get(pk=user_pk)
+        user_address = Address.objects.filter(user=user).first()
+
+        cart = Cart.objects.get(user=user)
+        cart_items = Cart_Item.objects.filter(cart=cart)
 
         order = Order.objects.create(user=user, shipping_address=user_address)
         order.save()
@@ -110,7 +104,7 @@ class OrderCreate(APIView):
             order, data={'user': user.pk, 'order_items': [], **request.data})
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return redirect('http://localhost:3000/orders')
         return Response(serializer.errors, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -135,7 +129,7 @@ class CancelOrder(APIView):
         if order.user != request.user:
             return Response({'error': 'You are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         # cancel order within the free cancelation time 3 days
-        if order.created_at + timedelta(days=3) < timezone.now():
+        if order.created_at + timedelta(days=2) < timezone.now() and order.status != 'delivered':
             return Response({'error': 'Free cancelation time exceeded, you are not allowed to cancel this order'}, status=status.HTTP_403_FORBIDDEN)
         order.status = 'canceled'
         order.save()

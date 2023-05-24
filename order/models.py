@@ -15,7 +15,6 @@ class Order(models.Model):
     STATUS_CHOICES = ((PENDING, "pending"), (SHIPPED, "shipped"), (DELIVERED, "delivered"), (CANCELED, "canceled"))
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=PENDING)
-    paid = models.BooleanField(default=False)
     user = models.ForeignKey(User, related_name='orders', on_delete=models.CASCADE)
     shipping_address = models.ForeignKey(Address, on_delete=models.CASCADE, null=True, blank=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
